@@ -11,6 +11,8 @@ st.set_page_config(
     layout="wide"
 )
 
+st.title("⚡ Smart Energy AI Dashboard")
+
 tabs = st.tabs([
     "📂 Data Upload",
     "⏱ Short-Term Load Forecast",
