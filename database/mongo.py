@@ -2,10 +2,11 @@
 from pymongo import MongoClient
 import os
 import streamlit as st
+from dotenv import load_dotenv
 
-# MONGO_URI = os.getenv("mongodb://localhost:27017/")
-MONGO_URI = os.getenv("mongodb+srv://varungupta0994_db_user:K5zp9Q36JlBU3ooK@nbpdcl-cluster.eedq6gr.mongodb.net/smart_energy_ai?retryWrites=true&w=majority")
-# MONGO_URI = st.secrets["MONGO_URI"]
+load_dotenv()
+# MONGO_URI = os.getenv("MONGO_URI")    #for local system
+MONGO_URI = st.secrets["MONGO_URI"]     # for app deployment on streamlit
 
 client = MongoClient(
     MONGO_URI,

@@ -7,3 +7,4 @@ tensorflow
 pymongo
 xlsxwriter
 huggingface_hub
+python-dotenv
