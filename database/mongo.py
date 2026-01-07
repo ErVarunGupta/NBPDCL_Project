@@ -4,7 +4,8 @@ import os
 import streamlit as st
 
 # MONGO_URI = os.getenv("mongodb://localhost:27017/")
-MONGO_URI = st.secrets["MONGO_URI"]
+MONGO_URI = os.getenv("mongodb+srv://varungupta0994_db_user:K5zp9Q36JlBU3ooK@nbpdcl-cluster.eedq6gr.mongodb.net/smart_energy_ai?retryWrites=true&w=majority")
+# MONGO_URI = st.secrets["MONGO_URI"]
 
 client = MongoClient(
     MONGO_URI,
