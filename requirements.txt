@@ -6,3 +6,4 @@ joblib
 tensorflow
 pymongo
 xlsxwriter
+huggingface_hub
