@@ -7,11 +7,11 @@ from services.stlf_service import stlf_tab
 from services.theft_service import theft_tab
 
 st.set_page_config(
-    page_title="⚡ Smart Energy AI Dashboard",
+    page_title="⚡ Smart Meter AI Dashboard",
     layout="wide"
 )
 
-st.title("⚡ Smart Energy AI Dashboard")
+st.title("⚡ Smart Meter AI Dashboard")
 
 tabs = st.tabs([
     "📂 Data Upload",
