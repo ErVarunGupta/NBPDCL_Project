@@ -5,8 +5,8 @@ import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
-# MONGO_URI = os.getenv("MONGO_URI")    #for local system
-MONGO_URI = st.secrets["MONGO_URI"]     # for app deployment on streamlit
+MONGO_URI = os.getenv("MONGO_URI")    #for local system
+# MONGO_URI = st.secrets["MONGO_URI"]     # for app deployment on streamlit
 
 client = MongoClient(
     MONGO_URI,
