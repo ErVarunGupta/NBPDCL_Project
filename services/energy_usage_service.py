@@ -133,7 +133,7 @@ def energy_tab():
         c1, c2, c3, c4 = st.columns(4)
 
         c1.metric("Monthly Total", f"{round(main_df['Wh'].sum()/1000,2)} kWh")
-        c2.metric("Peak Load", f"{round(main_df['Wh'].max(),1)} Wh")
+        c2.metric("Peak Load", f"{round(main_df['Wh'].max(), 1)} Wh", f"Day {main_df.loc[main_df['Wh'].idxmax(), 'day']}")
         c3.metric("Avg Power Factor", f"{round(main_df['PF'].mean(),2)}")
         c4.metric("Estimated Cost", f"₹{round(main_df['Cost'].sum(),2)}")
 
