@@ -8,8 +8,8 @@ load_dotenv()
 
 @st.cache_resource
 def get_db():
-    MONGO_URI = os.getenv("MONGO_URI")    #for local system
-#   MONGO_URI = st.secrets["MONGO_URI"]     # for app deployment on streamlit
+    # MONGO_URI = os.getenv("MONGO_URI")    #for local system
+    MONGO_URI = st.secrets["MONGO_URI"]     # for app deployment on streamlit
 
     client = MongoClient(
         MONGO_URI,
