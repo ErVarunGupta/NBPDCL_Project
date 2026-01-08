@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import joblib
 from datetime import datetime
+from pymongo.errors import NetworkTimeout, AutoReconnect
 
 from database.mongo import theft_col
 from utils.sequence_builder import create_sequences
@@ -64,9 +65,17 @@ def decide(anom, theft):
 def theft_tab():
     st.header("🚨 Theft & Anomaly Detection")
 
-    data = list(theft_col.find())
+    try:
+        data = list(
+            theft_col.find({}, {"_id": 0}).limit(200)
+        )
+    except (NetworkTimeout, AutoReconnect):
+        st.warning("🔄 Database timeout. Please retry.")
+        return
+
     if not data:
-        st.warning("No meter data found in database")
+        st.info("No theft meter data found")
+        st.info("Upload data from 📂 Data Upload tab")
         return
 
     df = pd.DataFrame(data)

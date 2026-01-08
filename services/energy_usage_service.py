@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import io
+from pymongo.errors import NetworkTimeout, AutoReconnect
 
 from database.mongo import energy_col
 from services.hf_model_loader import load_energy_model
@@ -27,7 +28,14 @@ def energy_tab():
     # ---------------------------
     # LOAD DATA FROM DB
     # ---------------------------
-    data = list(energy_col.find({}, {"_id": 0}))
+    try:
+        data = list(
+            energy_col.find({}, {"_id": 0}).limit(200)
+        )
+    except (NetworkTimeout, AutoReconnect):
+        st.warning("🔄 Database timeout. Please retry.")
+        return
+    
     if not data:
         st.warning("No energy usage data found in database")
         return

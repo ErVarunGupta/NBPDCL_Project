@@ -1,16 +1,24 @@
 import streamlit as st
 import pandas as pd
-import joblib
 from database.mongo import stlf_col
 from services.hf_model_loader import load_stlf_model
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import ServerSelectionTimeoutError, AutoReconnect
+import warnings
+
+# Silence sklearn / TF warnings
+warnings.filterwarnings("ignore")
 
 # ===============================
-# LOAD MODEL (ONCE)
+# LOAD MODEL (ONCE & SAFE)
 # ===============================
 @st.cache_resource
 def get_model():
-    return load_stlf_model()
+    try:
+        return load_stlf_model()
+    except Exception as e:
+        st.error("❌ Failed to load STLF model")
+        st.exception(e)
+        st.stop()
 
 model = get_model()
 
@@ -24,7 +32,6 @@ FEATURES = [
 # ===============================
 def stlf_tab():
     st.header("⏱ Short-Term Load Forecast (STLF)")
-    st.caption("Converted from Flask → Streamlit UI")
 
     # --------------------------------
     # SECTION 1: MANUAL INPUT (FORM)
@@ -58,8 +65,12 @@ def stlf_tab():
             lag_1, lag_2, lag_24, roll24_mean
         ]], columns=FEATURES)
 
-        prediction = model.predict(input_df)[0]
-        st.success(f"🔮 Predicted Load: **{round(float(prediction), 2)}**")
+        try:
+            prediction = model.predict(input_df)[0]
+            st.success(f"🔮 Predicted Load: **{round(float(prediction), 2)}**")
+        except Exception as e:
+            st.error("❌ Prediction failed")
+            st.exception(e)
 
     st.divider()
 
@@ -69,13 +80,15 @@ def stlf_tab():
     st.subheader("📂 STLF Using Database Data")
 
     try:
-        data = list(stlf_col.find({}, {"_id": 0}).limit(500))
-    except ServerSelectionTimeoutError:
-        st.error("❌ Database not reachable")
+        data = list(
+            stlf_col.find({}, {"_id": 0}).limit(200)
+        )
+    except (ServerSelectionTimeoutError, AutoReconnect):
+        st.warning("🔄 Database connection dropped, retrying later")
         return
 
     if not data:
-        st.warning("No STLF data found in database")
+        st.info("No STLF data found in database")
         st.info("Upload data from 📂 Data Upload tab")
         return
 
@@ -83,8 +96,12 @@ def stlf_tab():
     st.dataframe(df.head())
 
     if st.button("📈 Predict Using DB Records"):
-        X = df[FEATURES]
-        df["STLF_Prediction"] = model.predict(X)
+        try:
+            X = df[FEATURES]
+            df["STLF_Prediction"] = model.predict(X)
 
-        st.success("Prediction completed for database records")
-        st.dataframe(df)
+            st.success("Prediction completed for database records")
+            st.dataframe(df)
+        except Exception as e:
+            st.error("❌ Batch prediction failed")
+            st.exception(e)

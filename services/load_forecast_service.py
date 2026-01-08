@@ -4,6 +4,7 @@ import numpy as np
 from database.mongo import load_col
 from services.hf_model_loader import load_load_forecast_model
 from sklearn.preprocessing import MinMaxScaler
+from pymongo.errors import NetworkTimeout, AutoReconnect
 
 # ------------------ MODEL LOAD ------------------
 
@@ -27,7 +28,13 @@ def load_forecast_tab():
     st.header("📈 Load Forecast (LSTM – Short Term)")
 
     # Load data from MongoDB
-    data = list(load_col.find({}, {"_id": 0}))
+    try:
+        data = list(
+            load_col.find({}, {"_id": 0}).limit(200)
+        )
+    except (NetworkTimeout, AutoReconnect):
+        st.warning("🔄 Database timeout. Please retry.")
+        return
     if not data:
         st.warning("No data available in database")
         return
