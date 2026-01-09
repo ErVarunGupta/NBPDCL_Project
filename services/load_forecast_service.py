@@ -263,7 +263,7 @@ def create_sequences(data, time_steps=24):
 # MAIN TAB
 # =================================================
 def load_forecast_tab():
-    st.header("📈 Load Forecast (500 rows → MSN-wise)")
+    st.header("📈 Load Forecast (MSN-wise, 500 rows at a time)")
 
     # ---------------- SESSION STATE ----------------
     if "page" not in st.session_state:
@@ -285,15 +285,15 @@ def load_forecast_tab():
     with col3:
         st.info(f"Page: {st.session_state.page + 1}")
 
-    # 🔥 SAFE SKIP (NEVER NEGATIVE)
+    # ---------------- SAFE SKIP ----------------
     skip = max(st.session_state.page * PAGE_SIZE, 0)
 
-    # ---------------- LOAD 500 ROWS ----------------
+    # ---------------- LOAD DATA ----------------
     try:
         cursor = (
             load_col
             .find({}, {"_id": 0})
-            .sort("timestamp", 1)
+            .sort("ts", 1)
             .skip(skip)
             .limit(PAGE_SIZE)
         )
@@ -309,57 +309,50 @@ def load_forecast_tab():
 
     df = pd.DataFrame(data)
 
-    st.subheader("📂 Loaded Data (current page)")
+    st.subheader("📂 Loaded Data (preview)")
     st.dataframe(df.head(10))
 
     # ---------------- MSN DROPDOWN ----------------
-    if "msn_id" not in df.columns:
-        st.error("Column `msn_id` not found in data")
+    if "msn" not in df.columns:
+        st.error("Column `msn` not found in data")
         return
 
-    msn_list = sorted(df["msn_id"].dropna().unique().tolist())
+    msn_list = sorted(df["msn"].dropna().unique().tolist())
 
     if not msn_list:
-        st.warning("No MSN IDs found in this page")
+        st.warning("No MSN IDs found on this page")
         return
 
     selected_msn = st.selectbox(
-        "Select MSN ID (from these 500 rows)",
+        "Select Meter (MSN)",
         msn_list,
-        key=f"msn_select_{st.session_state.page}"  # 🔥 reset on page change
+        key=f"msn_select_{st.session_state.page}"
     )
 
-    # ---------------- FILTER DATA ----------------
-    msn_df = df[df["msn_id"] == selected_msn].copy()
+    # ---------------- FILTER MSN DATA ----------------
+    msn_df = df[df["msn"] == selected_msn].copy()
 
     if len(msn_df) < 24:
-        st.warning("Selected MSN has less than 24 records on this page")
+        st.warning("Not enough records for this meter (need ≥ 24)")
         return
 
-    # ---------------- LOAD COLUMN ----------------
-    numeric_cols = msn_df.select_dtypes(include="number").columns.tolist()
-    numeric_cols = [c for c in numeric_cols if c not in ["msn_id"]]
+    # ---------------- TARGET LOAD COLUMN ----------------
+    LOAD_COLUMN = "wh_imp"
 
-    if not numeric_cols:
-        st.error("No numeric load column found for selected MSN")
+    if LOAD_COLUMN not in msn_df.columns:
+        st.error("Required column `wh_imp` not found in data")
         return
-
-    # load_col_name = st.selectbox(
-    #     "Select Load Column",
-    #     numeric_cols,
-    #     key=f"load_col_{st.session_state.page}"
-    # )
 
     # ---------------- PREDICT ----------------
     if st.button("⏳ Predict Load"):
 
         scaler = MinMaxScaler()
-        scaled_data = scaler.fit_transform(msn_df[["msn"]])
+        scaled_data = scaler.fit_transform(msn_df[[LOAD_COLUMN]])
 
         X = create_sequences(scaled_data, 24)
 
         if len(X) == 0:
-            st.error("Not enough data after sequence creation")
+            st.error("Sequence generation failed")
             return
 
         preds = model.predict(X, verbose=0)
@@ -367,11 +360,13 @@ def load_forecast_tab():
 
         predicted_value = round(float(preds[-1][0]), 2)
 
-        st.success(f"🎯 Predicted Load: {predicted_value}")
+        st.success(f"🎯 Predicted Load (Wh): {predicted_value}")
 
         # ---------------- RESULT TABLE ----------------
         result_df = msn_df.iloc[24:].copy()
-        result_df["Predicted_Load"] = preds.flatten()
+        result_df["Predicted_Wh"] = preds.flatten()
 
         st.subheader("📈 Prediction Details")
-        st.dataframe(result_df.tail(10))
+        st.dataframe(
+            result_df[["ts", "wh_imp", "Predicted_Wh"]].tail(10)
+        )
