@@ -93,10 +93,12 @@ def theft_tab():
 
     st.caption(f"Page {st.session_state.page}")
 
+    skip = max(st.session_state.page * PAGE_SIZE, 0)
+
     try:
         data = list(
             theft_col.find({}, {"_id": 0})
-            .skip((st.session_state.page - 1) * PAGE_SIZE)
+            .skip(skip)
             .limit(PAGE_SIZE)
         )
     except (NetworkTimeout, AutoReconnect):
